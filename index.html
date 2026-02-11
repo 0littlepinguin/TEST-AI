@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>测测AI时代你最适合的职业</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0; /* Slate 200 */
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #60a5fa, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        /* Custom Scrollbar for results if needed */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569; 
+            border-radius: 4px;
+        }
+        /* Rolling Text Animation */
+        .rolling-container {
+            height: 3rem;
+            overflow: hidden;
+            position: relative;
+        }
+        .rolling-text {
+            animation: roll 10s infinite linear;
+        }
+        @keyframes roll {
+            0% { transform: translateY(100%); opacity: 0; }
+            10% { transform: translateY(0); opacity: 1; }
+            90% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-100%); opacity: 0; }
+        }
+        /* Fade In Animation */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Neon Button Glow */
+        .neon-button {
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+            transition: all 0.3s ease;
+        }
+        .neon-button:hover {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.8);
+            transform: scale(1.02);
+        }
+        
+        /* Hide default details marker */
+        details > summary {
+            list-style: none;
+        }
+        details > summary::-webkit-details-marker {
+            display: none;
+        }
+        
+        /* Arrow rotation for details */
+        details[open] summary span.transform {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Main Container (Mobile Frame) -->
+    <div id="app-container" class="w-full max-w-md bg-slate-900 min-h-[80vh] flex flex-col relative overflow-hidden">
+        
+        <!-- Screen 0: Lock Screen -->
+        <div id="lock-screen" class="flex flex-col items-center justify-center h-full text-center space-y-6 fade-in p-8 z-50 bg-slate-900 absolute inset-0">
+            <div class="space-y-2">
+                <h1 class="text-2xl font-bold text-white">内部测试通道</h1>
+                <p class="text-slate-400 text-sm">请输入访问密钥以继续</p>
+            </div>
+            
+            <div class="w-full space-y-4">
+                <input type="text" id="access-key" placeholder="输入密钥" class="w-full bg-slate-800 border border-slate-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-center tracking-widest placeholder-slate-600 transition-all">
+                <button onclick="checkKey()" class="neon-button w-full py-3 bg-indigo-600 rounded-xl text-white font-bold text-lg hover:bg-indigo-500">
+                    验证身份
+                </button>
+                <p id="key-error" class="text-red-400 text-xs hidden">密钥错误，请重试</p>
+            </div>
+        </div>
+
+        <!-- Screen 1: Welcome -->
+        <div id="welcome-screen" class="hidden flex-col items-center justify-center h-full text-center space-y-8 fade-in p-6">
+            <div class="space-y-4">
+                <h1 class="text-4xl font-bold leading-tight">
+                    测测<span class="gradient-text">AI时代</span><br>
+                    你最适合的职业
+                </h1>
+                <p class="text-slate-400 text-lg">
+                    AI不会取代你，但会用AI的人会。<br>
+                    立刻找到你的核心生态位。
+                </p>
+            </div>
+            
+            <div class="w-full pt-8">
+                <button onclick="startQuiz()" class="neon-button w-full py-4 bg-indigo-600 rounded-xl text-white font-bold text-xl tracking-wide hover:bg-indigo-500">
+                    开始测试
+                </button>
+                <p class="mt-4 text-xs text-slate-500">已有 <span id="user-count">1,300</span> 人参与测试</p>
+            </div>
+        </div>
+
+        <!-- Screen 2: Loading -->
+        <div id="loading-screen" class="hidden flex-col items-center justify-center h-full text-center space-y-6 fade-in p-6">
+            <div class="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+            <div class="h-12 overflow-hidden relative w-full">
+                 <p id="loading-text" class="text-indigo-300 text-lg font-medium animate-pulse">正在连接未来的职业数据库...</p>
+            </div>
+        </div>
+
+        <!-- Screen 3: Quiz -->
+        <div id="quiz-screen" class="hidden flex-col h-full fade-in p-4">
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-800 h-2 rounded-full mb-6">
+                <div id="progress-bar" class="bg-indigo-500 h-2 rounded-full transition-all duration-300" style="width: 10%"></div>
+            </div>
+
+            <!-- Question Card -->
+            <div class="flex-1 flex flex-col justify-center">
+                <h2 id="question-text" class="text-2xl font-bold mb-8 text-white leading-relaxed">
+                    问题加载中...
+                </h2>
+
+                <div id="options-container" class="space-y-4">
+                    <!-- Options will be injected here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 4: Result -->
+        <div id="result-screen" class="hidden flex-col h-full fade-in overflow-y-auto">
+            <!-- Content to Capture -->
+            <div id="result-card" class="bg-slate-800 p-6 rounded-2xl shadow-2xl m-2 border border-slate-700">
+                <div class="text-center mb-6">
+                    <p class="text-slate-400 text-sm mb-1">AI时代职业潜能评估报告</p>
+                    <h2 id="result-title" class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-indigo-500 mb-2">
+                        加载中...
+                    </h2>
+                    <div class="w-16 h-1 bg-indigo-500 mx-auto rounded-full"></div>
+                </div>
+
+                <div class="mb-6">
+                    <p id="result-desc" class="text-slate-300 leading-relaxed text-sm">
+                        加载中...
+                    </p>
+                </div>
+
+                <!-- Match Stats -->
+                <div id="match-stats" class="mb-6 grid grid-cols-2 gap-2 text-xs text-slate-400 bg-slate-900/30 p-3 rounded-lg border border-slate-700/30">
+                    <div class="flex justify-between items-center">
+                        <span>逻辑架构</span>
+                        <span id="score-A" class="text-indigo-400 font-bold">0%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>创意发散</span>
+                        <span id="score-B" class="text-pink-400 font-bold">0%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>人本共情</span>
+                        <span id="score-C" class="text-emerald-400 font-bold">0%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>战略统筹</span>
+                        <span id="score-D" class="text-amber-400 font-bold">0%</span>
+                    </div>
+                </div>
+
+                <div class="mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+                    <h3 class="text-indigo-400 font-bold mb-3 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        你的核心优势
+                    </h3>
+                    <p id="result-strength" class="text-sm text-slate-300">
+                        加载中...
+                    </p>
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="text-white font-bold text-lg">推荐职业方向</h3>
+                    
+                    <div class="space-y-3">
+                        <div class="bg-slate-700/50 p-3 rounded-lg border-l-4 border-emerald-500">
+                            <h4 class="text-emerald-400 font-bold text-sm mb-2">现存职业 (点击查看详情)</h4>
+                            <div id="career-existing" class="text-white text-sm space-y-2">加载中...</div>
+                        </div>
+                        
+                        <div class="bg-slate-700/50 p-3 rounded-lg border-l-4 border-purple-500">
+                            <h4 class="text-purple-400 font-bold text-sm mb-2">未来/预测职业 (点击查看详情)</h4>
+                            <div id="career-future" class="text-white text-sm space-y-2">加载中...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-4 border-t border-slate-700 text-center hidden">
+                    <div class="flex justify-center items-center space-x-2">
+                         <div class="w-12 h-12 bg-white rounded-lg p-1">
+                             <!-- QR Code Placeholder -->
+                             <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://ai-career-test.vercel.app" alt="QR" class="w-full h-full object-contain">
+                         </div>
+                         <div class="text-left">
+                             <p class="text-xs text-slate-400">长按识别二维码</p>
+                             <p class="text-xs font-bold text-white">测测你的AI职业</p>
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="p-4 space-y-3 pb-8">
+                <button onclick="generatePoster()" class="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl text-white font-bold shadow-lg hover:shadow-indigo-500/30 transition-all">
+                    保存结果海报
+                </button>
+                <button onclick="location.reload()" class="w-full py-3 bg-slate-700 rounded-xl text-slate-300 font-medium hover:bg-slate-600 transition-all">
+                    再测一次
+                </button>
+            </div>
+        </div>
+
+        <!-- Poster Modal (Hidden overlay for generated image) -->
+        <div id="poster-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col items-center justify-center p-4">
+            <div class="relative w-full max-w-sm">
+                <button onclick="closePoster()" class="absolute -top-10 right-0 text-white p-2">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <img id="generated-image" class="w-full rounded-xl shadow-2xl border border-slate-700" src="" alt="Result Poster">
+                <p class="text-center text-slate-400 text-sm mt-4">长按图片保存到手机</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
